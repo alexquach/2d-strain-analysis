@@ -2,12 +2,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from scipy.optimize import leastsq, least_squares, curve_fit
+from scipy.optimize import curve_fit
 
-import dask.dataframe as dd
 import time
 start_time = time.time()
-
 
 df_filtered_PL = pd.read_csv("multi_lossy_x-75to75_y-95to55_50by50.csv")
 
@@ -16,14 +14,6 @@ xData = df_filtered_PL['W']
 df_iter = df_filtered_PL.copy()
 df_iter.drop(["W"], axis=1, inplace=True)
 # df_iter.drop("Unnamed: 0", axis=1, inplace=True)
-
-# yData = df_filtered_PL['x0_y79']
-
-# # rename indices to account for lossy hambel filter
-# xData.index = range(len(xData))
-# yData.index = range(len(yData))
-
-# yData = yData / max(yData)
 
 def lorentzian(x, x0, a, gam):
     return a / (1 + (2 * (x - x0)/gam)**2 )
@@ -122,14 +112,3 @@ if __name__ == "__main__":
     print(f"Result:\n{result}")
     print("--- %s seconds ---" % (time.time() - start_time))
     result.to_csv('multi_results_x-75to75_y-95to55_50by50.csv')
-
-    # dd_iter = dd.from_pandas(df_iter.iloc[:, :5], npartitions=30)
-    # # meta = pd.DataFrame(columns=["results"])
-    # # meta.results.astype(np.float64)
-    # print(dd_iter.index)
-    # meta = pd.DataFrame(columns=dd_iter.index)
-    # meta.astype(np.float64)
-
-    # dask_results = dd_iter.apply(fit_lorentzians_given_yData, xData, meta=meta).compute()
-
-    # dask_results.mean().compute()
