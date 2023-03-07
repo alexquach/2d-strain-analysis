@@ -7,17 +7,22 @@ from lorentzian import fit_lorentzians_given_yData
 import time
 start_time = time.time()
 is_raman = True
-theoretical_raman_peak = 250
+with_slope = False
+theoretical_raman_peak = 308
 xlim = (theoretical_raman_peak-10, theoretical_raman_peak+10)
 
 csv_path = 'multi_lossy_region15_raman_1mW_filter1_3.5K_grating2400_center250_exp.3s_x-150to150_y-150to150_100by100.csv'
 df_filtered = pd.read_csv(csv_path)
 
 # Set initial conditions and constraints
-if is_raman:
+if is_raman and with_slope:
     xData = df_filtered['Wavenumber']
     startValues = [0.1, 0, theoretical_raman_peak, 1, 1, theoretical_raman_peak+5, 1, 1]
     bounds = [-np.inf, -np.inf, 0, 0, 1, 0, 0, 1], [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf]
+elif is_raman:
+    xData = df_filtered['Wavenumber']
+    startValues = [0.1, theoretical_raman_peak, 1, 1, theoretical_raman_peak+5, 1, 1]
+    bounds = [-np.inf, 0, 0, 1, 0, 0, 1], [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf]
 else:
     xData = df_filtered['W']
     startValues = [0.1, 725, 1, 30, 750, 1, 30]
@@ -57,4 +62,4 @@ if __name__ == "__main__":
     })
     print(f"Result:\n{result}")
     print("--- %s seconds ---" % (time.time() - start_time))
-    result.to_csv(f'multi_results_{xlim[0]}to{xlim[1]}_{csv_path}')
+    result.to_csv(f'multi_results_{xlim[0]}to{xlim[1]}_{"wslope" if with_slope else "noslope"}_{csv_path}')

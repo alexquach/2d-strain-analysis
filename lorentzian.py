@@ -8,10 +8,10 @@ PL_parameters = ["offset", "x0_1", "a1", "gam1", "x0_2", "a2", "gam2"]
 def lorentzian(x, x0, a, gam):
     return a / (1 + (2 * (x - x0)/gam)**2 )
 
-def multi_lorentz_PL(x, off, x0_1, a1, gam1, x0_2, a2, gam2):
+def multi_lorentz_no_slope(x, off, x0_1, a1, gam1, x0_2, a2, gam2):
         return off + lorentzian(x, x0_1, a1, gam1) + lorentzian(x, x0_2, a2, gam2)
 
-def multi_lorentz_raman(x, off, slope, x0_1, a1, gam1, x0_2, a2, gam2):
+def multi_lorentz_with_slope(x, off, slope, x0_1, a1, gam1, x0_2, a2, gam2):
         return off + slope * x + lorentzian(x, x0_1, a1, gam1) + lorentzian(x, x0_2, a2, gam2)
 
 def mse(popt, x, y, multi_lorentz):
@@ -23,7 +23,7 @@ def fit_lorentzians_given_yData(yData, xData, startValues, bounds):
     label_name = yData.name
     yData = yData / max(yData)
 
-    multi_lorentz = multi_lorentz_PL if len(startValues) == 7 else multi_lorentz_raman
+    multi_lorentz = multi_lorentz_no_slope if len(startValues) == 7 else multi_lorentz_with_slope
 
     try:
         popt, pcov = curve_fit( multi_lorentz, xData, yData.squeeze(), startValues, bounds=bounds, maxfev=100000 )   # Fit multiple Lorentzian functions to the data
