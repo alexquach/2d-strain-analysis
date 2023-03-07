@@ -4,7 +4,17 @@ import time
 
 start_time = time.time()
 
-df_PL = pd.read_csv('x-75to75_y-95to55_50by50.csv')
+window_size = 11
+sigma_threshold = 3
+input_csv = 'region15_raman_1mW_filter1_3.5K_grating2400_center250_exp.3s_x-150to150_y-150to150_100by100.csv'
+df = pd.read_csv(input_csv)
+
+is_raman = True
+if is_raman:
+  EXCITATION_WAVELENGTH = 532
+  df['W'] = 1e7 / EXCITATION_WAVELENGTH - 1e7 / df['W']
+  df.rename({"W": "Wavenumber"}, axis=1, inplace=True)
+
 
 def hampel(vals_orig, k=5, threshold=3):
     med = np.median(vals_orig)
@@ -13,27 +23,27 @@ def hampel(vals_orig, k=5, threshold=3):
         vals_orig.iloc[k//2] = med
     return vals_orig.iloc[k//2]
 
-def parallel_lossy_hampel(df, window_size=11, sigma_threshold=3):
+def parallel_lossy_hampel(df, window_size=window_size, sigma_threshold=sigma_threshold):
   return (df.rolling(window=window_size).apply(hampel, raw=False, args=(window_size, sigma_threshold))) #.iloc[window_size - 1:, :]
 
 def perform_parallel(column_name):
-  return parallel_lossy_hampel(df_PL[column_name])
+  return parallel_lossy_hampel(df[column_name])
 
 if __name__ == "__main__":
-  window_size = 11
-  print(df_PL)
-
-  # x = pd.DataFrame({k: fit_lorentzians_given_yData(test_df[k]) for k in tqdm(test_df.columns)})
   from multiprocessing import Pool
   import os
 
+  print(df)
+
   pool = Pool(os.cpu_count())                         # Create a multiprocessing Pool
-  result = pool.map(perform_parallel, df_PL.columns)  # process data_inputs iterable with pool
+  result = pool.map(perform_parallel, df.columns)     # process data_inputs iterable with pool
   result = pd.DataFrame({
-      k: v for k, v in zip(df_PL.columns, result)
+      k: v for k, v in zip(df.columns, result)
   })
 
-  result = result.iloc[window_size - 1:, :]
+  # truncate the NAN rows (resulting from hampel filter)
+  result = result.iloc[window_size - 1:, :].reset_index(drop=True)
+
   print(f"Result:\n{result}")
+  result.to_csv(f'multi_lossy_{input_csv}')
   print("--- %s seconds ---" % (time.time() - start_time))
-  result.to_csv('multi_lossy_x-75to75_y-95to55_50by50.csv')
